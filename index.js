@@ -97,7 +97,7 @@ class Cell {
 
     render = (context, colour) => {
         // top left
-        context.fillStyle = colour
+        context.fillStyle = start.x === this.x && start.y === this.y ? 'orange' : colour
         context.fillRect(
             (2 * this.x + 1) * RENDERED_CELL_SIZE,
             (2 * this.y + 1) * RENDERED_CELL_SIZE,
@@ -152,7 +152,7 @@ _canvas.setAttribute('height', CORRECT_CANVAS_SIZE + '')
 //
 // ALGO
 //
-let maze, current, next, previous, previousColour, stack
+let maze, current, next, previous, previousColour, stack, start
 
 const resetVariables = () => {
     maze = Array.from({length: LINE_WISE_COUNT}, (_, i) => {
@@ -160,7 +160,8 @@ const resetVariables = () => {
             return new Cell(j, i)
         })
     }).flat()
-    current = maze[0]
+    start = maze[Math.floor(Math.random() * maze.length)]
+    current = start
     current.visited = true
     next = current.getUnvisitedNeighbour()
     previous = null
@@ -190,28 +191,6 @@ function* recursiveBackTrack() {
 
 
 //
-// CHANGE COLUMNS
-//
-// TODO: style the canvas so that it has a variable border dependant on its width and height
-//       - so canvas element has fixed width and height but render space can change
-//       -
-const columnsRange = document.getElementById('column-range')
-columnsRange.value = BLOCK_WISE_COUNT
-columnsRange.onchange = () => {
-    BLOCK_WISE_COUNT = columnsRange.value * 2 + 1
-    LINE_WISE_COUNT = (BLOCK_WISE_COUNT + 1) / 2
-
-    RENDERED_CELL_SIZE = Math.round(CANVAS_SIZE / (BLOCK_WISE_COUNT + 2))
-    CORRECT_CANVAS_SIZE = RENDERED_CELL_SIZE * (BLOCK_WISE_COUNT + 2)
-
-    _canvas.setAttribute('width', CORRECT_CANVAS_SIZE + '')
-    _canvas.setAttribute('height', CORRECT_CANVAS_SIZE + '')
-
-    resetVariables()
-}
-
-
-//
 // ENTRY POINT
 //
 new Renderer(_canvas, 24)
@@ -223,6 +202,9 @@ new Renderer(_canvas, 24)
         }
         recursiveBackTrack().next()
 
+
         if (previous) previous.render(context, previousColour)
         current.render(context, 'red')
+
+
     }).run(false, false)
