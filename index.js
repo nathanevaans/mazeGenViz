@@ -43,7 +43,7 @@ class Renderer {
 
                 if (showFPS) {
                     const currentFPS = 1000 / ((this.now - this.startTime) / ++this.frameCount)
-                    console.log(`set fps: ${this.fps}, achieved: ${currentFPS.toFixed(2)}`)
+                    console.log(`fps: ${currentFPS.toFixed(2)}`)
                 }
             }
         }
@@ -216,4 +216,4 @@ new Renderer(24, _context)
         if (previous) previous.render(context, previousColour)
         current.render(context, 'red')
     })
-    .start( true)
+    .start()
