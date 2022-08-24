@@ -1,54 +1,64 @@
+//
+// RENDERER
+//
+
 class Renderer {
-    #FPS
-    #loopLogic
-    #canvas
-    #context
+    
+    constructor(fps, context) {
+        this.fps = fps
+        this.context = context
+        this.isStop = false
+    }
 
-    constructor(canvas, FPS) {
-        this.#canvas = canvas
-        this.#context = canvas.getContext('2d')
-        this.#FPS = {
-            FPS: FPS,
-            cycleDelay: Math.floor(1000 / FPS),
-            oldCycleTime: 0,
-            cycleCount: 0,
-            fpsRate: 'FPS: ...'
+    setDraw(callback) {
+        this.draw = callback
+        return this
+    }
+
+    setInit(callback) {
+        this.init = callback
+        return this
+    }
+
+    start(showFPS = false) {
+        if (this.init) this.init()
+
+        this.frameCount = 0;
+        this.fpsInterval = 1000 / this.fps;
+        this.then = window.performance.now()
+        this.startTime = this.then;
+
+        this.render = () => {
+            if (this.isStop) return
+
+            requestAnimationFrame(this.render)
+
+            this.now = window.performance.now();
+            this.elapsed = this.now - this.then
+
+            if (this.elapsed > this.fpsInterval) {
+                this.then = this.now - (this.elapsed % this.fpsInterval)
+
+                if (this.draw) this.draw(this.context)
+
+                if (showFPS) {
+                    const currentFPS = 1000 / ((this.now - this.startTime) / ++this.frameCount)
+                    console.log(`set fps: ${this.fps}, achieved: ${currentFPS.toFixed(2)}`)
+                }
+            }
         }
-        return this
+        requestAnimationFrame(this.render)
     }
 
-    #calculateFPS = () => {
-        this.#FPS.cycleCount++
-        if (this.#FPS.cycleCount >= 60) this.#FPS.cycleCount = 0
-        let startTime = Date.now()
-        let cycleTime = startTime - this.#FPS.oldCycleTime
-        this.#FPS.oldCycleTime = startTime
-        if (this.#FPS.cycleCount % 60 === 0) this.#FPS.fpsRate = `FPS: ${Math.floor(1000 / cycleTime)}`
+    pause() {
+        this.isStop = true
     }
 
-    setLoopLogic = (handler) => {
-        this.#loopLogic = handler
-        return this
+    play() {
+        this.isStop = false
+        requestAnimationFrame(this.render)
     }
 
-    init = (handler) => {
-        handler(this.#canvas, this.#canvas)
-        return this
-    }
-
-    run = (showFPS = false, clear = true) => {
-        this.#calculateFPS()
-        if (showFPS) console.log(this.#FPS.fpsRate)
-
-        if (clear) {
-            this.#context.fillStyle = 'white'
-            this.#context.fillRect(0, 0, this.#canvas.width, this.#canvas.height)
-        }
-
-        this.#loopLogic(this.#canvas, this.#context)
-
-        setTimeout(this.run, this.#FPS.cycleDelay, showFPS, clear)
-    }
 }
 
 class Cell {
@@ -148,6 +158,8 @@ const _canvas = document.getElementById('canvas')
 _canvas.setAttribute('width', CORRECT_CANVAS_SIZE + '')
 _canvas.setAttribute('height', CORRECT_CANVAS_SIZE + '')
 
+const _context = _canvas.getContext('2d')
+
 
 //
 // ALGO
@@ -193,18 +205,15 @@ function* recursiveBackTrack() {
 //
 // ENTRY POINT
 //
-new Renderer(_canvas, 24)
-    .init(() => resetVariables())
-    .setLoopLogic((canvas, context) => {
+new Renderer(24, _context)
+    .setInit(() => resetVariables())
+    .setDraw((context) => {
         if (stack.length === 0) {
             context.fillStyle = '#28282B'
             context.fillRect(0, 0, CORRECT_CANVAS_SIZE, CORRECT_CANVAS_SIZE)
         }
         recursiveBackTrack().next()
-
-
         if (previous) previous.render(context, previousColour)
         current.render(context, 'red')
-
-
-    }).run(false, false)
+    })
+    .start( true)
